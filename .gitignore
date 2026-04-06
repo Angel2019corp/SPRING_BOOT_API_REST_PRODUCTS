@@ -49,8 +49,8 @@ target/
 .vscode/
 *.classpath
 *.project  
-  .settings/                                                                                                                                                                 
+.settings/                                                                                                                                                                 
             
-  # OS                                                                                                                                                                       
-  .DS_Store       
-  Thumbs.db
+# OS                                                                                                                                                                       
+.DS_Store       
+Thumbs.db
