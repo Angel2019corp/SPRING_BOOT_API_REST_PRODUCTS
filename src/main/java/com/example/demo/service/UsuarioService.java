@@ -27,13 +27,12 @@ public class UsuarioService {
 		this.passwordEncoder = passwordEncoder;
 	}
 	
-	public Usuario registrar( UsuarioDTO usrDto,  HttpServletRequest request) {
-		String clienteIp = request.getRemoteAddr();
+	public Usuario registrar( UsuarioDTO usrDto,  String client) {
 		Usuario usr = new Usuario(); 
 		usr.setUsername(usrDto.username());
 		usr.setPasswordHash(passwordEncoder.encode(usrDto.password()));
 		usr.setRole(usrDto.role());
-		usr.setIpCreated(clienteIp);
+		usr.setIpCreated(client);
 		usr.setLastAccess(new Timestamp(System.currentTimeMillis()));
 		return usuarioRepository.save(usr);
 		

@@ -16,7 +16,7 @@ public record UsuarioDTO(
 		String password,
 		
 		@NotBlank(message = "Ingresar rol del usuario")
-		@Size(min = 2, max = 10, message = "Longitud entre 2 y 10 para el rol de usuario")
+		@Pattern(regexp="^(USER|VENDOR|WAREHOUSE)$", message = "Rol restringido, contactar a soporte")
 		String role
 	) {
 }

@@ -34,7 +34,7 @@ public class AuthController {
 			return ResponseEntity.badRequest().body(  Map.of( "error", "usuario existente" ));
 		}
 		
-		Usuario usrSaved = usuarioService.registrar(newUser, request);
+		Usuario usrSaved = usuarioService.registrar(newUser, request.getRemoteAddr());
 		
 		return ResponseEntity.ok(  Map.of("respuesta","usuario creado", "username", usrSaved.getUsername()  ));
 		
