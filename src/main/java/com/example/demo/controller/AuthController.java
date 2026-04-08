@@ -29,13 +29,10 @@ public class AuthController {
 	
 	@PostMapping("/register")
 	public ResponseEntity<?> register (@RequestBody @Valid UsuarioDTO newUser, HttpServletRequest request) {
-		
 		if (  usuarioService.existeUsuario(newUser) ) {
 			return ResponseEntity.badRequest().body(  Map.of( "error", "usuario existente" ));
 		}
-		
 		Usuario usrSaved = usuarioService.registrar(newUser, request.getRemoteAddr());
-		
 		return ResponseEntity.ok(  Map.of("respuesta","usuario creado", "username", usrSaved.getUsername()  ));
 		
 		
@@ -43,16 +40,11 @@ public class AuthController {
 	
 	
 	@PostMapping("/login")
-	public ResponseEntity<?> login ( @RequestBody Map<String, String> body ,HttpServletRequest request ) {
-		String username = body.get("username"); 
-		String password = body.get("pass");
-		if ( username == null  || password == null  ) {
-			return ResponseEntity.badRequest().body( Map.of( "Error", "faltan datos"));
-		}
-		return usuarioService.buscarPorUsername(username)
+	public ResponseEntity<?> login ( @RequestBody @Valid UsuarioDTO userLog ,HttpServletRequest request ) {
+		return usuarioService.buscarPorUsername(userLog.username())
 				.map( usr -> {
-					if ( usuarioService.validarPassword( password, usr.getPasswordHash())  ) {
-						usuarioService.actualizarLastAcces(username, request);
+					if ( usuarioService.validarPassword( userLog.password(), usr.getPasswordHash())  ) {
+						usuarioService.actualizarLastAcces(userLog.username(), request);
 						String token = jwUtil.generarToken(usr.getUsername(), usr.getRole());
 						return ResponseEntity.ok(  Map.of( "token", token) );
 					} else {

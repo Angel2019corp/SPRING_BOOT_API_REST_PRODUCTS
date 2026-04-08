@@ -24,7 +24,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/productos/**").hasAnyRole("ADMIN", "VENDOR")
 						.requestMatchers(HttpMethod.POST, "/api/productos/**").hasRole("ADMIN")
-						.requestMatchers(HttpMethod.GET, "/api/ventas/**").hasAnyAuthority("ADMIN", "VENDOR")
+						.requestMatchers(HttpMethod.GET, "/api/ventas/**").hasAnyRole("ADMIN", "VENDOR")
 						.anyRequest().authenticated());
 
 		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

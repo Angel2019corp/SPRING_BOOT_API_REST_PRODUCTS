@@ -44,7 +44,7 @@ Spring Boot 3.5 REST API backed by an Oracle XE database (`localhost:1521/XEPDB1
 
 **Date filtering in `VentaRepository`:** Uses a native Oracle query with `TRUNC()` to compare dates, since `FECHA_VENTA` is a `TIMESTAMP` column.
 
-**`ProductoService.convertirDTO`** calls `producto.getCategoria().getNombre()` — a producto without a categoria will throw NPE. Every saved producto must have a valid `categoriaId`.
+**`ProductoService.convertirDTO`** returns `"Sin categoria"` when `getCategoria()` is null. Every saved producto should have a valid `categoriaId`.
 
 ## Roles
 
@@ -62,12 +62,9 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 ## Pending improvements
 
 ### High priority
-- **`GlobalExceptionHandler` incomplete** (`controller/exception/GlobalExceptionHandler.java`) — Missing handlers for `EntityNotFoundException` (404) and generic `Exception` (500). Only `MethodArgumentNotValidException` is currently handled.
-- **`SecurityConfig` sin reglas por rol** (`security/SecurityConfig.java`) — Solo valida que el usuario esté autenticado. Falta configurar `hasRole`/`hasAnyRole` por endpoint para `ADMIN`, `VENDOR`, `WAREHOUSE` y `USER`.
+- **`SecurityConfig` reglas por rol incompletas** (`security/SecurityConfig.java`) — Tiene reglas parciales pero: (1) `hasAnyAuthority("ADMIN","VENDOR")` en ventas es un bug — debe ser `hasAnyRole` porque `JwtFilter` registra la autoridad como `ROLE_<rol>`; (2) `USER` y `WAREHOUSE` no tienen acceso a GET productos; (3) falta manejo de 401/403 con JSON. Falta también configurar `exceptionHandling` para respuestas consistentes.
 
 ### Medium priority
-- **NPE in `ProductoService.convertirDTO`** (`service/ProductoService.java:70`) — `producto.getCategoria().getNombre()` is called without null check.
-- **`obtenerPorId` returns `null`** (`service/ProductoService.java:35`) — Should throw `EntityNotFoundException` instead of returning null; requires corresponding handler in `GlobalExceptionHandler`.
 - **Inconsistent responses** — `GET /api/productos/{id}` returns the raw `Producto` JPA entity while list endpoints return `ProductoResponseDTO`. All endpoints should use DTOs.
 - **Field `@Autowired` vs constructor injection** — `ProductoService` and `VentaService` use field injection, which makes unit testing harder. Follow the constructor injection pattern already used in `AuthController` and `UsuarioService`.
 - **Control de acceso a nivel de datos** — Un `VENDOR` puede ver todas las ventas, no solo las propias. Filtrar por usuario del token en `VentaService`.
@@ -86,7 +83,9 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 - **JWT secret debe ser robusto** — Verificar que `jwt.secret` en `prop.env` tenga al menos 256 bits aleatorios y se rote periódicamente.
 
 ## Completed improvements
-- **Global exception handler added** — `GlobalExceptionHandler` created in `controller/exception/`. Handles `MethodArgumentNotValidException` with field-level messages from `UsuarioDTO` validations.
+- **Global exception handler completo** — `GlobalExceptionHandler` maneja `MethodArgumentNotValidException` (400), `EntityNotFoundException` (404) y `Exception` genérico (500). El 500 no expone el stack trace.
+- **`obtenerPorId` lanza excepción** — `ProductoService.obtenerPorId` ahora lanza `EntityNotFoundException` en lugar de devolver `null`.
+- **NPE corregido en `convertirDTO`** — `ProductoService.convertirDTO` tiene null check en `getCategoria()`; devuelve `"Sin categoria"` si es null.
 - **`UsuarioRepository.existsUser` fixed** — Replaced non-functional `existsUser(Usuario)` with derived query `existsByUsernameAndRole(String, String)`.
 - **Credentials externalized** — `DB_USERNAME`, `DB_PASSWORD` y `JWT_SECRET` movidos a variables de entorno en `application.properties`; ya no hay valores en texto plano.
 - **Role escalation on register fixed** — `UsuarioDTO` ahora restringe el campo `role` mediante `@Pattern(regexp="^(USER|VENDOR|WAREHOUSE)$")`. `ADMIN` no puede registrarse públicamente.

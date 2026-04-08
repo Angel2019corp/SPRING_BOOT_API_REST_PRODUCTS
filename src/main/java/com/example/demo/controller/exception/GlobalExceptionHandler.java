@@ -9,10 +9,13 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Clase que implementa el procesamiento de las excepciones 
@@ -34,5 +37,20 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.badRequest().body(Map.of("Errores", mensajesError));
 		
 	}
+	
+	@ExceptionHandler(EntityNotFoundException.class)
+	public ResponseEntity<?> validacionEntidades(EntityNotFoundException ex) {
+		LOG.warn("No se encontro la entidad: {}",  ex);
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("Errores",ex.getMessage()));
+	}
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<?> validacionGeneral(Exception ex) {
+		LOG.error("No se encontro la entidad: {}",  ex.getMessage(), ex);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("error","Ocurrio un error. Contactar a soporte"));
+		
+	}
+	
 
 }

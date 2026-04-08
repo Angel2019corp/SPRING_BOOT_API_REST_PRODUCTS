@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.CategoriaRepository;
 import com.example.demo.repository.ProductoRepository;
+
+import jakarta.persistence.EntityNotFoundException;
+
 import com.example.demo.domain.*;
 import com.example.demo.dto.ProductoRequest;
 import com.example.demo.dto.ProductoResponseDTO;
@@ -15,24 +18,26 @@ import com.example.demo.dto.ProductoResponseDTO;
 public class ProductoService {
 	
 	@Autowired
-	private ProductoRepository repo;
+	private ProductoRepository productoRepository;
 	
 	@Autowired 
-	private CategoriaRepository catRepo; 
+	private CategoriaRepository categoriaRepository; 
 
     public Page<ProductoResponseDTO> listarProductos(Pageable pageable) {
-        return repo.findAll(pageable)
+        return productoRepository.findAll(pageable)
         		.map(this::convertirDTO);
     }
     
     public Page<ProductoResponseDTO> getProductosByCategory(Long categoriaId,  Pageable pageable) {
-    	 return repo.findByCategoriaId( categoriaId, pageable )
+    	 return productoRepository.findByCategoriaId( categoriaId, pageable )
     			 .map(this::convertirDTO);
     	
     } 
 
     public Producto obtenerPorId(Long id) {
-        return repo.findById(id).orElse(null);
+        return productoRepository.findById(id).orElseThrow(
+        		() -> new EntityNotFoundException( "El producto con id: " + id + " no existe " )
+        		);
     }
 
     public Producto guardar(ProductoRequest req) {
@@ -43,31 +48,28 @@ public class ProductoService {
     	productoNew.setStock(req.getStock());
     	
     	if (req.getCategoriaId() != null) {
-    		Categoria cat = catRepo.findById(req.getCategoriaId())
-    				.orElseThrow(  () -> new RuntimeException("Categoria incorrecta") );
-    		System.out.println("Asignando categoría: " + cat.getId());
-
-    		productoNew.setCategoria(cat);
-    				
-    		
+    		Categoria cat = categoriaRepository.findById(req.getCategoriaId())
+    				.orElseThrow(  () -> new RuntimeException("La categoria con el id: " + req.getCategoriaId()  + " no existe") );
+    		productoNew.setCategoria(cat);	
     	}
     	
-        return repo.save(productoNew);
+        return productoRepository.save(productoNew);
     }
 
     public void eliminar(Long id) {
-        repo.deleteById(id);
+    	productoRepository.deleteById(id);
     }
     
     
     private ProductoResponseDTO convertirDTO(Producto producto ) {
+    	String categoria = producto.getCategoria() != null ? producto.getCategoria().getNombre() : "Sin categoria";    	
     	return new ProductoResponseDTO(
     				producto.getId(),
     				producto.getNombre(),
     				producto.getDescripcion(),
     				producto.getPrecio(),
     				producto.getStock(),
-    				producto.getCategoria().getNombre()
+    				categoria
     			);
     }
 }

@@ -11,7 +11,7 @@ public record UsuarioDTO(
 		@Size(min = 5, max = 50, message = "Longitud entre 5 y 50 para el nombre de usuario")
 		String username,
 		
-		@NotBlank(message = "Ingresar Contraseña")
+		@NotBlank(message = "Contraseña obligatoria")
 		@Size(min = 5, max = 20, message = "Longitud entre 5 y 20 para la contraseña")
 		String password,
 		
