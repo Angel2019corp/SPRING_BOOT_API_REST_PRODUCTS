@@ -62,10 +62,9 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 ## Pending improvements
 
 ### High priority
-- **`SecurityConfig` reglas por rol incompletas** (`security/SecurityConfig.java`) — Tiene reglas parciales pero: (1) `hasAnyAuthority("ADMIN","VENDOR")` en ventas es un bug — debe ser `hasAnyRole` porque `JwtFilter` registra la autoridad como `ROLE_<rol>`; (2) `USER` y `WAREHOUSE` no tienen acceso a GET productos; (3) falta manejo de 401/403 con JSON. Falta también configurar `exceptionHandling` para respuestas consistentes.
+- **`SecurityConfig` manejo de 401/403 con JSON pendiente** (`security/SecurityConfig.java`) — Falta configurar `exceptionHandling` para devolver respuestas JSON consistentes en lugar de la respuesta por defecto de Spring Security.
 
 ### Medium priority
-- **Inconsistent responses** — `GET /api/productos/{id}` returns the raw `Producto` JPA entity while list endpoints return `ProductoResponseDTO`. All endpoints should use DTOs.
 - **Field `@Autowired` vs constructor injection** — `ProductoService` and `VentaService` use field injection, which makes unit testing harder. Follow the constructor injection pattern already used in `AuthController` and `UsuarioService`.
 - **Control de acceso a nivel de datos** — Un `VENDOR` puede ver todas las ventas, no solo las propias. Filtrar por usuario del token en `VentaService`.
 - **Jerarquía de roles no configurada** — `ADMIN` no hereda permisos de roles inferiores automáticamente. Configurar `RoleHierarchy` o listar roles explícitamente con `hasAnyRole`.
@@ -89,3 +88,5 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 - **`UsuarioRepository.existsUser` fixed** — Replaced non-functional `existsUser(Usuario)` with derived query `existsByUsernameAndRole(String, String)`.
 - **Credentials externalized** — `DB_USERNAME`, `DB_PASSWORD` y `JWT_SECRET` movidos a variables de entorno en `application.properties`; ya no hay valores en texto plano.
 - **Role escalation on register fixed** — `UsuarioDTO` ahora restringe el campo `role` mediante `@Pattern(regexp="^(USER|VENDOR|WAREHOUSE)$")`. `ADMIN` no puede registrarse públicamente.
+- **Respuesta consistente en `GET /api/productos/{id}`** — `ProductoService.obtenerPorId` ahora devuelve `ProductoResponseDTO` usando `.map(this::convertirDTO)` en lugar de la entidad JPA cruda.
+- **`SecurityConfig` acceso a GET productos corregido** — `USER` y `WAREHOUSE` agregados a `hasAnyRole` en la regla de GET `/api/productos/**`; todos los roles tienen acceso de lectura.

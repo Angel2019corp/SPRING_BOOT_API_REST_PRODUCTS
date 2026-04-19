@@ -34,8 +34,10 @@ public class ProductoService {
     	
     } 
 
-    public Producto obtenerPorId(Long id) {
-        return productoRepository.findById(id).orElseThrow(
+    public ProductoResponseDTO obtenerPorId(Long id) {
+        return productoRepository.findById(id)
+        		.map(this::convertirDTO)
+        		.orElseThrow(
         		() -> new EntityNotFoundException( "El producto con id: " + id + " no existe " )
         		);
     }
