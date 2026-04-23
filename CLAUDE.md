@@ -29,11 +29,12 @@ Spring Boot 3.5 REST API backed by an Oracle XE database (`localhost:1521/XEPDB1
 - `controller/` — REST controllers
 - `controller/exception/` — Global exception handler (`GlobalExceptionHandler`)
 - `dto/` — Response/request shapes (`ProductoResponseDTO`, `VentaResponseDTO`, `ProductoRequest`, `UsuarioDTO`)
-- `security/` — JWT auth (`JwUtil`, `JwtFilter`, `SecurityConfig`)
+- `security/` — JWT auth (`JwUtil`, `JwtFilter`, `SecurityConfig`, `JwtAuthenticationEntryPoint`, `JwtAccessDeniedHandler`)
 
 **Authentication flow:**
 - `POST /api/auth/register` and `POST /api/auth/login` are public; all other endpoints require a `Bearer <token>` header.
-- `JwtFilter` validates the token and sets the Spring Security context with `ROLE_<role>` authority.
+- `JwtFilter` validates the token and sets the Spring Security context with `ROLE_<role>` authority. Si el token está expirado o es inválido, delega en `JwtAuthenticationEntryPoint` para devolver un 401 JSON y corta la cadena con `return`.
+- `JwtAuthenticationEntryPoint` maneja los 401 (token ausente/inválido/expirado) devolviendo `{"error": "..."}`. `JwtAccessDeniedHandler` maneja los 403 (rol insuficiente) con el mismo formato. Ambos están registrados en `SecurityConfig` vía `exceptionHandling(...)`.
 - JWT secret and expiry (1 hour) are configured in `application.properties` via `jwt.secret`.
 
 **Key domain relationships:**
@@ -61,9 +62,6 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 
 ## Pending improvements
 
-### High priority
-- **`SecurityConfig` manejo de 401/403 con JSON pendiente** (`security/SecurityConfig.java`) — Falta configurar `exceptionHandling` para devolver respuestas JSON consistentes en lugar de la respuesta por defecto de Spring Security.
-
 ### Medium priority
 - **Field `@Autowired` vs constructor injection** — `ProductoService` and `VentaService` use field injection, which makes unit testing harder. Follow the constructor injection pattern already used in `AuthController` and `UsuarioService`.
 - **Control de acceso a nivel de datos** — Un `VENDOR` puede ver todas las ventas, no solo las propias. Filtrar por usuario del token en `VentaService`.
@@ -82,6 +80,7 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 - **JWT secret debe ser robusto** — Verificar que `jwt.secret` en `prop.env` tenga al menos 256 bits aleatorios y se rote periódicamente.
 
 ## Completed improvements
+- **`SecurityConfig` manejo de 401/403 con JSON** — Configurado `exceptionHandling` con `JwtAuthenticationEntryPoint` (401) y `JwtAccessDeniedHandler` (403). Ambos serializan `{"error": "..."}` con `ObjectMapper`. `JwtFilter` delega en el `AuthenticationEntryPoint` los casos de `ExpiredJwtException`, `JwtException` e `IllegalArgumentException`, cortando la cadena con `return` para no escribir el response dos veces.
 - **Global exception handler completo** — `GlobalExceptionHandler` maneja `MethodArgumentNotValidException` (400), `EntityNotFoundException` (404) y `Exception` genérico (500). El 500 no expone el stack trace.
 - **`obtenerPorId` lanza excepción** — `ProductoService.obtenerPorId` ahora lanza `EntityNotFoundException` en lugar de devolver `null`.
 - **NPE corregido en `convertirDTO`** — `ProductoService.convertirDTO` tiene null check en `getCategoria()`; devuelve `"Sin categoria"` si es null.
