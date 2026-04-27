@@ -63,14 +63,12 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 ## Pending improvements
 
 ### Medium priority
-- **Field `@Autowired` vs constructor injection** — `ProductoService` and `VentaService` use field injection, which makes unit testing harder. Follow the constructor injection pattern already used in `AuthController` and `UsuarioService`.
 - **Control de acceso a nivel de datos** — Un `VENDOR` puede ver todas las ventas, no solo las propias. Filtrar por usuario del token en `VentaService`.
 - **Jerarquía de roles no configurada** — `ADMIN` no hereda permisos de roles inferiores automáticamente. Configurar `RoleHierarchy` o listar roles explícitamente con `hasAnyRole`.
 - **Tabla `STOCK` pendiente** — Necesaria para el rol `WAREHOUSE`. Crear entidad, repositorio, servicio y controller.
 
 ### Low priority
-- **`System.out.println` in production code** — `ProductoService.java:48` and `VentaController.java:39` use println for debug. Replace with SLF4J logger (already used correctly in `GlobalExceptionHandler`).
-- **Nombre de variable fuera de convención** — `VentaService.java:19` declara `ventarepository` en minúsculas; debería ser `ventaRepository` (camelCase).
+- **`System.out.println` in production code** — `VentaController.java:39` usa println para debug. Reemplazar con logger SLF4J (ya se usa correctamente en `GlobalExceptionHandler`).
 - **Missing `equals`/`hashCode` on JPA entities** — Can cause unexpected behavior in collections or dirty-checking.
 - **No DB migration tool** — Schema is managed manually. Consider Flyway or Liquibase to version SQL scripts.
 - **`PUT` and `DELETE` for productos are commented out** — `ProductoController.java:46-55`. The API currently has no way to update or delete products.
@@ -80,6 +78,9 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 - **JWT secret debe ser robusto** — Verificar que `jwt.secret` en `prop.env` tenga al menos 256 bits aleatorios y se rote periódicamente.
 
 ## Completed improvements
+- **Inyección por constructor en services** — `ProductoService` y `VentaService` ahora reciben sus dependencias por constructor en lugar de `@Autowired` en campos, alineándose con `AuthController` y `UsuarioService`. Facilita los tests unitarios.
+- **`ventarepository` renombrado a `ventaRepository`** — Campo, parámetro del constructor y todos los usos en `VentaService` ahora siguen camelCase.
+- **`System.out.println` removido de `ProductoService`** — Eliminado el println de debug en `guardar`. Falta aún el de `VentaController.java:39`.
 - **`SecurityConfig` manejo de 401/403 con JSON** — Configurado `exceptionHandling` con `JwtAuthenticationEntryPoint` (401) y `JwtAccessDeniedHandler` (403). Ambos serializan `{"error": "..."}` con `ObjectMapper`. `JwtFilter` delega en el `AuthenticationEntryPoint` los casos de `ExpiredJwtException`, `JwtException` e `IllegalArgumentException`, cortando la cadena con `return` para no escribir el response dos veces.
 - **Global exception handler completo** — `GlobalExceptionHandler` maneja `MethodArgumentNotValidException` (400), `EntityNotFoundException` (404) y `Exception` genérico (500). El 500 no expone el stack trace.
 - **`obtenerPorId` lanza excepción** — `ProductoService.obtenerPorId` ahora lanza `EntityNotFoundException` en lugar de devolver `null`.

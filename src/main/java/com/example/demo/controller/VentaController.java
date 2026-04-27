@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import java.time.LocalDate;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,16 +20,22 @@ import com.example.demo.service.VentaService;
 @RequestMapping("/api/ventas")
 public class VentaController {
 	
-	@Autowired
-	private  VentaService service; 
+	
+	private final VentaService ventaService; 
+	
+	public VentaController(VentaService ventaService) {
+		this.ventaService = ventaService;
+	}
+	
+	
 	
 	@GetMapping
 	public ResponseEntity<Page<VentaResponseDTO > > listarVentas(Pageable pageable ) {
-		return ResponseEntity.ok(service.listarVentas(pageable));
+		return ResponseEntity.ok(ventaService.listarVentas(pageable));
 		
 	} 
 	
-	@GetMapping("fechas")
+	@GetMapping("/fechas")
 	public ResponseEntity<Page<VentaResponseDTO>> listarVentasPorFecha(
 			@RequestParam("fechaInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio, 
 			@RequestParam("fechaFin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,			
@@ -37,7 +43,7 @@ public class VentaController {
 			)
 	{
 		System.out.println("fecha inicio: " + fechaInicio + " fecha fin: " + fechaFin);
-		return ResponseEntity.ok(service.listarVentasPorFechas(fechaInicio, fechaFin, pageable));
+		return ResponseEntity.ok(ventaService.listarVentasPorFechas(fechaInicio, fechaFin, pageable));
 	}
 	
 }

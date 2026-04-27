@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,11 +16,14 @@ import com.example.demo.dto.ProductoResponseDTO;
 @Service
 public class ProductoService {
 	
-	@Autowired
 	private ProductoRepository productoRepository;
 	
-	@Autowired 
 	private CategoriaRepository categoriaRepository; 
+	
+	public ProductoService(ProductoRepository productoRepository,CategoriaRepository categoriaRepository) {
+		this.productoRepository = productoRepository;
+		this.categoriaRepository = categoriaRepository;
+	}
 
     public Page<ProductoResponseDTO> listarProductos(Pageable pageable) {
         return productoRepository.findAll(pageable)

@@ -29,7 +29,7 @@ public class UsuarioService {
 	
 	public Usuario registrar( UsuarioDTO usrDto,  String client) {
 		Usuario usr = new Usuario(); 
-		usr.setUsername(usrDto.username());
+		usr.setUsername(usrDto.username().toLowerCase());
 		usr.setPasswordHash(passwordEncoder.encode(usrDto.password()));
 		usr.setRole(usrDto.role());
 		usr.setIpCreated(client);
@@ -38,7 +38,7 @@ public class UsuarioService {
 		
 	}
 	public boolean existeUsuario(UsuarioDTO usr) {
-		return usuarioRepository.existsByUsernameAndRole(usr.username(), usr.role());
+		return usuarioRepository.existsByUsernameAndRole(usr.username().toLowerCase(), usr.role());
 		
 	}
 	public Optional<Usuario> buscarPorUsername(String username) {

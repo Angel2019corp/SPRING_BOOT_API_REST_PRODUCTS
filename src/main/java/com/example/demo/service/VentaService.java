@@ -1,30 +1,32 @@
 package com.example.demo.service;
 
 import java.time.LocalDate;
-import java.util.Date;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.repository.VentaRepository;
 import com.example.demo.domain.Venta;
 import com.example.demo.dto.VentaResponseDTO;
+import com.example.demo.repository.VentaRepository;
 
 @Service
 public class VentaService {
 	
-	@Autowired
-	private VentaRepository ventarepository;
+	
+	private VentaRepository ventaRepository;
+	
+	public VentaService(VentaRepository ventaRepository) {
+		this.ventaRepository = ventaRepository;
+	}
 	
 	public  Page<VentaResponseDTO> listarVentas ( Pageable pageable ) {
-		return ventarepository.findAll(pageable)
+		return ventaRepository.findAll(pageable)
 				.map(this::convertirDTO);
 	}
 	
 	public Page<VentaResponseDTO> listarVentasPorFechas(LocalDate fechaInicio,LocalDate fechaFin,Pageable pageable) {
-		return ventarepository.findByFechaVentaBetween(fechaInicio, fechaFin, pageable)
+		return ventaRepository.findByFechaVentaBetween(fechaInicio, fechaFin, pageable)
 				.map(this::convertirDTO);
 	}
 	
