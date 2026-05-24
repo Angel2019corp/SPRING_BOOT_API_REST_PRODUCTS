@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;                                                                                                                                                
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.example.demo.domain.Venta;
 import com.example.demo.dto.VentaResponseDTO;
@@ -14,20 +17,29 @@ import com.example.demo.repository.VentaRepository;
 public class VentaService {
 	
 	
-	private VentaRepository ventaRepository;
+	private final VentaRepository ventaRepository;
+	
+	private static final String ROLE_VENDOR = "ROLE_VENDOR";
+	
 	
 	public VentaService(VentaRepository ventaRepository) {
 		this.ventaRepository = ventaRepository;
 	}
 	
 	public  Page<VentaResponseDTO> listarVentas ( Pageable pageable ) {
-		return ventaRepository.findAll(pageable)
-				.map(this::convertirDTO);
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		Page<Venta> vts = isVendor(auth) 
+				? ventaRepository.findByUsuarioUsername(auth.getName(), pageable)
+						: ventaRepository.findAll(pageable);
+		return vts.map(this::convertirDTO);
 	}
 	
 	public Page<VentaResponseDTO> listarVentasPorFechas(LocalDate fechaInicio,LocalDate fechaFin,Pageable pageable) {
-		return ventaRepository.findByFechaVentaBetween(fechaInicio, fechaFin, pageable)
-				.map(this::convertirDTO);
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		Page<Venta> vts = isVendor(auth)
+				? ventaRepository.findByFechaVentaBetweenAndUsername(fechaInicio, fechaFin, auth.getName(), pageable)
+						:  ventaRepository.findByFechaVentaBetween(fechaInicio, fechaFin, pageable);
+		return vts.map(this::convertirDTO);
 	}
 	
 	private VentaResponseDTO convertirDTO(Venta venta) {
@@ -40,5 +52,16 @@ public class VentaService {
 				venta.getFechaVenta()
 				);
 	} 
+	private boolean isVendor(Authentication auth) {
+		if (auth == null || auth.getAuthorities() == null) {
+			return false;
+		}
+		for(GrantedAuthority grandAuth : auth.getAuthorities()) {
+			if(ROLE_VENDOR.equals(grandAuth.getAuthority())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 }

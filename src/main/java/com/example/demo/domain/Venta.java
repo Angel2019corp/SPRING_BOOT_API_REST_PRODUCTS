@@ -19,6 +19,10 @@ public class Venta {
 	@JoinColumn(name = "PRODUCTO_ID", nullable = false)
 	private Producto producto; 
 	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "ID_USUARIO", nullable = false)
+	private Usuario usuario;
+	
 	@Column(nullable = false)
 	private Integer cantidad;
 	
@@ -79,6 +83,14 @@ public class Venta {
 
 	public void setFechaVenta(Date fechaVenta) {
 		this.fechaVenta = fechaVenta;
+	}
+
+	public Usuario getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(Usuario usuario) {
+		this.usuario = usuario;
 	}
 
 	

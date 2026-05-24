@@ -40,6 +40,7 @@ Spring Boot 3.5 REST API backed by an Oracle XE database (`localhost:1521/XEPDB1
 **Key domain relationships:**
 - `Producto` → `Categoria` (ManyToOne, lazy)
 - `Venta` → `Producto` (ManyToOne, lazy); `total` and `fechaVenta` are `insertable=false, updatable=false` — computed/defaulted by the database.
+- `Venta` → `Usuario` (ManyToOne, lazy) vía columna `ID_USUARIO` (`NOT NULL`, FK a `USUARIOS.ID`). Identifica al VENDOR que registró la venta.
 
 **Pagination:** All list endpoints accept Spring `Pageable` query params (`page`, `size`, `sort`).
 
@@ -63,7 +64,6 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 ## Pending improvements
 
 ### Medium priority
-- **Control de acceso a nivel de datos** — Un `VENDOR` puede ver todas las ventas, no solo las propias. Filtrar por usuario del token en `VentaService`.
 - **Jerarquía de roles no configurada** — `ADMIN` no hereda permisos de roles inferiores automáticamente. Configurar `RoleHierarchy` o listar roles explícitamente con `hasAnyRole`.
 - **Tabla `STOCK` pendiente** — Necesaria para el rol `WAREHOUSE`. Crear entidad, repositorio, servicio y controller.
 
@@ -78,6 +78,8 @@ Roles definidos para el sistema. `ADMIN` solo puede crearse directamente en BD o
 - **JWT secret debe ser robusto** — Verificar que `jwt.secret` en `prop.env` tenga al menos 256 bits aleatorios y se rote periódicamente.
 
 ## Completed improvements
+- **Control de acceso a nivel de datos en ventas** — `VentaService` recupera el `Authentication` desde `SecurityContextHolder` y, si la authority es `ROLE_VENDOR`, filtra por el `username` propio (`auth.getName()`). Implementado en `listarVentas` (vía `ventaRepository.findByUsuarioUsername`) y en `listarVentasPorFechas` (vía `ventaRepository.findByFechaVentaBetweenAndUsername`, query nativa con subselect a `USUARIOS` por `TRUNC(FECHA_VENTA)`). ADMIN sigue viendo todas las ventas. Helper privado `isVendor(Authentication)` itera `getAuthorities()` comparando contra la constante `ROLE_VENDOR`.
+- **Relación `Venta` ↔ `Usuario` agregada** — `VENTAS` ahora tiene la columna `ID_USUARIO` (`NUMBER(19)`, `NOT NULL`, FK a `USUARIOS.ID` vía `FK_VENTAS_USUARIO`) e índice `IX_VENTAS_ID_USUARIO`. Mapeada en `Venta` como `@ManyToOne(fetch = LAZY) @JoinColumn(name = "ID_USUARIO", nullable = false) private Usuario usuario`. Habilita el filtrado de ventas por VENDOR.
 - **Inyección por constructor en services** — `ProductoService` y `VentaService` ahora reciben sus dependencias por constructor en lugar de `@Autowired` en campos, alineándose con `AuthController` y `UsuarioService`. Facilita los tests unitarios.
 - **`ventarepository` renombrado a `ventaRepository`** — Campo, parámetro del constructor y todos los usos en `VentaService` ahora siguen camelCase.
 - **`System.out.println` removido de `ProductoService`** — Eliminado el println de debug en `guardar`. Falta aún el de `VentaController.java:39`.
