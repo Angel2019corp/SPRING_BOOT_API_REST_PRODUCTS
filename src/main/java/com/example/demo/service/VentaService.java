@@ -9,21 +9,32 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.example.demo.domain.Producto;
+import com.example.demo.domain.Usuario;
 import com.example.demo.domain.Venta;
+import com.example.demo.dto.VentaDTO;
 import com.example.demo.dto.VentaResponseDTO;
+import com.example.demo.repository.ProductoRepository;
+import com.example.demo.repository.UsuarioRepository;
 import com.example.demo.repository.VentaRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class VentaService {
 	
 	
 	private final VentaRepository ventaRepository;
+	private final ProductoRepository productoRepository;
+	private final UsuarioRepository usuarioRepository; 
 	
 	private static final String ROLE_VENDOR = "ROLE_VENDOR";
 	
 	
-	public VentaService(VentaRepository ventaRepository) {
+	public VentaService(VentaRepository ventaRepository, ProductoRepository productoRepository, UsuarioRepository usuarioRepository) {
 		this.ventaRepository = ventaRepository;
+		this.productoRepository = productoRepository;
+		this.usuarioRepository = usuarioRepository;
 	}
 	
 	public  Page<VentaResponseDTO> listarVentas ( Pageable pageable ) {
@@ -45,7 +56,7 @@ public class VentaService {
 	private VentaResponseDTO convertirDTO(Venta venta) {
 		return new VentaResponseDTO(
 				venta.getIdPedido(),
-				venta.getProducto().getDescripcion(),
+				venta.getProducto().getNombre(),
 				venta.getCantidad(),
 				venta.getPrecioUnitario(),
 				venta.getTotal(),
@@ -62,6 +73,20 @@ public class VentaService {
 			}
 		}
 		return false;
+	}
+	
+	public VentaResponseDTO registrarVenta( VentaDTO ventaDto ) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		Venta vt = new Venta();
+		vt.setCantidad(ventaDto.cantidad());
+		Producto pr = productoRepository.findById(ventaDto.productoId()).orElseThrow(() -> new EntityNotFoundException( "El producto con id: " + ventaDto.productoId() + " no existe " ));
+		Usuario usr = usuarioRepository.findByUsername( auth.getName() ).orElseThrow(() -> new EntityNotFoundException( "El usuario: " + auth.getName() + " no existe " ));
+		vt.setPrecioUnitario(pr.getPrecio());
+		vt.setProducto(pr);
+		vt.setUsuario(usr);
+		ventaRepository.save(vt);
+		
+		return convertirDTO(vt);
 	}
 
 }

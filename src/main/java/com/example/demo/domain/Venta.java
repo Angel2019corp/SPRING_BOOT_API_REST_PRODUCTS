@@ -2,6 +2,9 @@ package com.example.demo.domain;
 
 import java.util.Date;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -29,10 +32,13 @@ public class Venta {
 	@Column(name = "PRECIO_UNITARIO", nullable = false)
 	private Double precioUnitario;
 	
+	@Generated(event=EventType.INSERT )
 	@Column(insertable = false, updatable = false)
 	private Double total;
 	
+	
 	@Temporal(TemporalType.TIMESTAMP)
+	@Generated(event=EventType.INSERT )
 	@Column(name = "FECHA_VENTA", nullable = false, insertable = false, updatable = false)
 	private Date fechaVenta;
 	
